@@ -1,6 +1,5 @@
 import streamlit as st
 import re
-import unicodedata
 
 st.set_page_config(page_title="Text Cleaner", layout="centered")
 
@@ -8,56 +7,45 @@ def normalize_text(s: str) -> str:
     if not s:
         return ""
 
-    # Xóa ngoặc kép
+    # 1. Xóa ngoặc kép
     s = s.replace('“', '').replace('”', '').replace('"', '')
 
-    # Thay mọi loại dash bằng dấu chấm
+    # 2. Thay mọi loại dash bằng dấu chấm
     s = s.replace('-', '.').replace('–', '.').replace('—', '.')
 
-    # Gom nhiều dấu chấm thành 1
+    # 3. Gom nhiều dấu chấm thành 1
     s = re.sub(r'\.{2,}', '.', s)
 
-    # Giữ lại chữ, số, khoảng trắng và dấu câu cơ bản
-    allowed_punct = set(['.', ',', ';', ':', '?', '!', '(', ')'])
-    out_chars = []
-    for ch in s:
-        cat = unicodedata.category(ch)
-        if cat[0] in ('L', 'N', 'Z'):  # Letter, Number, Separator
-            out_chars.append(ch)
-        elif ch in allowed_punct:
-            out_chars.append(ch)
-        else:
-            out_chars.append(" ")  # thay ký tự lạ bằng khoảng trắng
+    # 4. Loại bỏ ký tự không mong muốn (chỉ giữ chữ, số, dấu câu, khoảng trắng)
+    # ⚠️ Không dùng unicodedata → tránh tách chữ tiếng Việt
+    s = re.sub(r"[^0-9A-Za-zÀ-ỹ.,;:?!()\s]", " ", s)
 
-    result = ''.join(out_chars)
+    # 5. Gom nhiều khoảng trắng thành 1
+    s = re.sub(r'\s+', ' ', s)
 
-    # Gom nhiều khoảng trắng thành 1
-    result = re.sub(r'\s+', ' ', result)
+    # 6. Xóa khoảng trắng thừa trước dấu câu
+    s = re.sub(r'\s+([.,;:?!])', r'\1', s)
 
-    # Xóa khoảng trắng thừa trước dấu câu
-    result = re.sub(r'\s+([.,;:?!])', r'\1', result)
-
-    # Viết hoa sau dấu chấm + đầu văn bản
-    def capitalize_after_dot(text):
-        sentences = re.split('(\. )', text)
+    # 7. Viết hoa đầu câu
+    def capitalize_sentences(text):
+        text = text.strip()
+        # Tách câu dựa trên dấu chấm + khoảng trắng
+        parts = re.split('([.?!]\s*)', text)
         fixed = []
-        for i, seg in enumerate(sentences):
-            if i == 0 and seg:
+        for i, seg in enumerate(parts):
+            if i % 2 == 0:  # đoạn văn
                 fixed.append(seg.strip().capitalize())
-            elif seg == '. ':
+            else:  # dấu câu
                 fixed.append(seg)
-            elif seg:
-                fixed.append(seg.strip().capitalize())
-        return ''.join(fixed)
+        return ''.join(fixed).strip()
 
-    result = capitalize_after_dot(result)
+    s = capitalize_sentences(s)
 
-    return result.strip()
+    return s
 
 st.title("📝 Text Cleaner")
-st.write("Nhập văn bản cần chuẩn hóa, hệ thống sẽ loại bỏ ký tự đặc biệt, "
-         "chuyển dấu `-` thành `.`, gom nhiều dấu `.` thành 1, "
-         "và viết hoa sau dấu chấm.")
+st.write("Nhập văn bản cần chuẩn hóa: bỏ ký tự đặc biệt, thay '-' bằng '.', "
+         "gom nhiều dấu '.' thành 1, viết hoa đầu câu.")
 
 # Ô nhập văn bản
 input_text = st.text_area("Nhập văn bản gốc tại đây:", height=200)
@@ -67,11 +55,9 @@ if st.button("🔄 Xử lý văn bản"):
     cleaned = normalize_text(input_text)
     if cleaned:
         st.success("✅ Văn bản đã xử lý")
-
-        # Hiển thị văn bản kết quả
         st.text_area("Kết quả:", cleaned, height=200, key="output")
 
-        # Nút tải xuống file .txt
+        # Nút tải file txt
         st.download_button(
             label="📥 Tải kết quả .txt",
             data=cleaned,
@@ -79,6 +65,6 @@ if st.button("🔄 Xử lý văn bản"):
             mime="text/plain"
         )
 
-        st.info("👉 Bạn có thể copy thủ công từ ô 'Kết quả' hoặc tải file .txt về máy.")
+        st.info("👉 Bạn có thể copy thủ công từ ô 'Kết quả' hoặc tải file .txt về.")
     else:
         st.warning("⚠️ Không có nội dung để xử lý.")
