@@ -2,36 +2,25 @@ import streamlit as st
 import re
 from docx import Document
 
-# === Hàm xử lý khoảng cách chữ bị lỗi OCR (tách rời từng ký tự) ===
+# === Hàm gom chữ OCR bị tách rời (d ượ c -> dược, tr ở -> trở) ===
 def fix_ocr_spacing(text: str) -> str:
     if not text:
         return text
 
-    tokens = text.split()
-    merged_tokens = []
-    buffer = ""
+    def merge_chars(match):
+        return match.group(0).replace(" ", "")
 
-    for tok in tokens:
-        if len(tok) == 1:  # nếu là ký tự đơn lẻ
-            buffer += tok
-        else:
-            if buffer:
-                merged_tokens.append(buffer + tok)
-                buffer = ""
-            else:
-                merged_tokens.append(tok)
+    # Gom các cụm chữ cái/dấu cách lặp lại thành một từ
+    text = re.sub(r'(?:\b\w\s)+\w\b', merge_chars, text)
 
-    if buffer:
-        merged_tokens.append(buffer)
-
-    return " ".join(merged_tokens)
+    return text
 
 
 # === Hàm thêm khoảng trắng khi chữ bị dính liền (VD: ởđó -> ở đó) ===
 def fix_missing_spacing(text: str) -> str:
-    vowels = "àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡ" \
+    vowels = "àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễ" \
+             "ìíịỉĩòóọỏõôồốộổỗơờớợởỡ" \
              "ùúụủũưừứựửữỳýỵỷỹđ"
-    # Thêm khoảng trắng khi chữ có dấu + chữ không dấu dính nhau
     text = re.sub(rf'([{vowels}])([A-Za-z])', r'\1 \2', text)
     text = re.sub(rf'([A-Za-z])([{vowels}])', r'\1 \2', text)
     return text
@@ -40,16 +29,16 @@ def fix_missing_spacing(text: str) -> str:
 # === Hàm sửa lỗi spacing nhỏ khác ===
 def fix_broken_spacing(text: str) -> str:
     text = re.sub(r"\s+", " ", text)  # bỏ khoảng trắng thừa
-    text = re.sub(r"\.{2,}", ".", text)  # từ 2 dấu chấm trở lên -> 1 dấu chấm
+    text = re.sub(r"\.{2,}", ".", text)  # nhiều dấu chấm -> 1 dấu
     return text.strip()
 
 
-# === Hàm chuẩn hóa văn bản ===
+# === Hàm chuẩn hóa văn bản tổng hợp ===
 def normalize_text(text: str) -> str:
     if not text:
         return ""
 
-    # Xóa ký tự đặc biệt, giữ lại chữ, số, khoảng trắng và dấu câu cơ bản
+    # Xóa ký tự đặc biệt
     result = re.sub(r"[“”\"\'\*\~\^\%\$\#\@\!\?\[\]\{\}\<\>\\\/\=\+]", "", text)
 
     # Đổi dấu gạch ngang thành dấu chấm
@@ -58,13 +47,13 @@ def normalize_text(text: str) -> str:
     # Gộp dấu chấm liên tiếp
     result = re.sub(r"\.{2,}", ".", result)
 
-    # Bỏ in đậm -> chuyển về chữ thường (giả lập vì DOCX không giữ inline style khi đọc)
+    # Chuyển về chữ thường
     result = result.lower()
 
-    # Fix spacing
+    # Fix spacing cơ bản
     result = fix_broken_spacing(result)
 
-    # Fix OCR spacing (tách rời từng ký tự)
+    # Fix OCR spacing (quan trọng nhất)
     result = fix_ocr_spacing(result)
 
     # Fix missing spacing (từ bị dính liền)
@@ -102,7 +91,7 @@ if st.button("⚙️ Xử lý văn bản"):
         st.subheader("✅ Văn bản đã chuẩn hóa:")
         st.text_area("Kết quả", processed_text, height=300)
 
-        # Hiển thị khung copy
+        # Khung copy
         st.code(processed_text, language="markdown")
         st.button("📋 Copy toàn bộ", on_click=lambda: st.session_state.update({"copied": True}))
 
