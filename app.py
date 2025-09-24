@@ -17,7 +17,6 @@ def normalize_text(s: str) -> str:
     s = re.sub(r'\.{2,}', '.', s)
 
     # 4. Loại bỏ ký tự không mong muốn (chỉ giữ chữ, số, dấu câu, khoảng trắng)
-    # ⚠️ Không dùng unicodedata → tránh tách chữ tiếng Việt
     s = re.sub(r"[^0-9A-Za-zÀ-ỹ.,;:?!()\s]", " ", s)
 
     # 5. Gom nhiều khoảng trắng thành 1
@@ -26,15 +25,19 @@ def normalize_text(s: str) -> str:
     # 6. Xóa khoảng trắng thừa trước dấu câu
     s = re.sub(r'\s+([.,;:?!])', r'\1', s)
 
-    # 7. Viết hoa đầu câu
+    # 7. Đảm bảo sau . ? ! luôn có 1 khoảng trắng (nếu không phải cuối văn bản)
+    s = re.sub(r'([.?!])(\S)', r'\1 \2', s)
+
+    # 8. Viết hoa đầu câu
     def capitalize_sentences(text):
         text = text.strip()
-        # Tách câu dựa trên dấu chấm + khoảng trắng
+        # Tách câu dựa trên dấu . ? !
         parts = re.split('([.?!]\s*)', text)
         fixed = []
         for i, seg in enumerate(parts):
             if i % 2 == 0:  # đoạn văn
-                fixed.append(seg.strip().capitalize())
+                if seg:
+                    fixed.append(seg.strip().capitalize())
             else:  # dấu câu
                 fixed.append(seg)
         return ''.join(fixed).strip()
@@ -43,21 +46,26 @@ def normalize_text(s: str) -> str:
 
     return s
 
+# ============================
+# Giao diện Streamlit
+# ============================
+
 st.title("📝 Text Cleaner")
-st.write("Nhập văn bản cần chuẩn hóa: bỏ ký tự đặc biệt, thay '-' bằng '.', "
-         "gom nhiều dấu '.' thành 1, viết hoa đầu câu.")
+st.write("Nhập văn bản cần chuẩn hóa. Phần mềm sẽ loại bỏ ký tự đặc biệt, "
+         "thay '-' bằng '.', gom nhiều dấu '.' thành 1, viết hoa đầu câu, "
+         "và đảm bảo sau dấu chấm có 1 khoảng trắng.")
 
 # Ô nhập văn bản
 input_text = st.text_area("Nhập văn bản gốc tại đây:", height=200)
 
-# Khi nhấn nút xử lý
+# Nút xử lý
 if st.button("🔄 Xử lý văn bản"):
     cleaned = normalize_text(input_text)
     if cleaned:
         st.success("✅ Văn bản đã xử lý")
         st.text_area("Kết quả:", cleaned, height=200, key="output")
 
-        # Nút tải file txt
+        # Nút tải xuống file txt
         st.download_button(
             label="📥 Tải kết quả .txt",
             data=cleaned,
@@ -65,6 +73,6 @@ if st.button("🔄 Xử lý văn bản"):
             mime="text/plain"
         )
 
-        st.info("👉 Bạn có thể copy thủ công từ ô 'Kết quả' hoặc tải file .txt về.")
+        st.info("👉 Bạn có thể copy trực tiếp từ ô 'Kết quả' hoặc tải file .txt về máy.")
     else:
         st.warning("⚠️ Không có nội dung để xử lý.")
