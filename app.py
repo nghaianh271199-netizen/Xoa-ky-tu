@@ -3,78 +3,79 @@ import re
 
 st.set_page_config(page_title="Text Cleaner", layout="centered")
 
-# ========================
-# Danh sách ký tự đặc biệt cần thay bằng khoảng trắng
-# ========================
-SPECIAL_CHARS = [
-    "★","☆","✡","✦","✧","✩","✪","✫","✬","✭","✮","✯","✰",
-    "⁂","⁎","⁑","✢","✣","✤","✥","✱","✲","✳","✴","✵","✶","✷",
-    "✸","✹","✺","✻","✼","✽","✾","✿","❀","❁","❂","❃","❇","❈",
-    "❉","❊","❋","❄","❆","❅","⋆","≛","↕","↖","↗","↘","↙","↚",
-    "↛","↜","↝","↞","↟","↠","↡","↢","↣","↤","↥","↦","↧","↨",
-    "↩","↪","↫","↬","↭","↮","↯","↰","↱","↲","↳","↴","↶","↷",
-    "↸","↹","↺","↻","⇎","⇍","⇌","⇋","⇊","⇉","⇈","⇇","⇆","⇅",
-    "⇄","⇃","⇂","⇁","⇀","↿","↾","↽","↼","⇏","⇕","⇖","⇗","⇘",
-    "⇙","⇚","⇛","⇜","⇝","⇞","⇟","⇠","⇡","⇢","⇣","⇤","⇥","⇦",
-    "➚","➙","➘","➔","☍","☌","☋","☊","☈","☇","▶","⏎","⌤","⌆",
-    "$","€","£","¥","₮","฿","₩","₫","₪","₨","❤","❣","♡","♥","❥","❦","❧"
-]
+def normalize_text(s: str) -> str:
+    if not s:
+        return ""
 
-# ========================
-# Hàm xử lý văn bản
-# ========================
-def clean_text(text: str) -> str:
-    # Thay ký tự đặc biệt bằng khoảng trắng
-    for ch in SPECIAL_CHARS:
-        text = text.replace(ch, " ")
+    # 1. Xóa ngoặc kép
+    s = s.replace('“', '').replace('”', '').replace('"', '')
 
-    # Xóa ngoặc kép đặc biệt
-    text = text.replace("“", "").replace("”", "")
+    # 2. Thay mọi loại dash bằng dấu chấm
+    s = s.replace('-', '.').replace('–', '.').replace('—', '.')
 
-    # Thay "…" bằng "."
-    text = text.replace("…", ".")
+    # 3. Thay dấu ba chấm … bằng dấu chấm
+    s = s.replace('…', '.')
 
-    # Thay dấu - bằng dấu chấm
-    text = text.replace("-", ".")
+    # 4. Gom nhiều dấu chấm thành 1
+    s = re.sub(r'\.{2,}', '.', s)
 
-    # Gom nhiều dấu chấm liên tiếp -> 1 dấu chấm
-    text = re.sub(r"\.{2,}", ".", text)
+    # 5. Loại bỏ ký tự không mong muốn (chỉ giữ chữ, số, dấu câu, khoảng trắng)
+    s = re.sub(r"[^0-9A-Za-zÀ-ỹ.,;:?!()\s]", " ", s)
 
-    # Sau dấu chấm phải có 1 khoảng trắng
-    text = re.sub(r"\.(\S)", r". \1", text)
+    # 6. Gom nhiều khoảng trắng thành 1
+    s = re.sub(r'\s+', ' ', s)
 
-    # Bỏ in đậm -> thường
-    text = text.lower()
+    # 7. Xóa khoảng trắng thừa trước dấu câu
+    s = re.sub(r'\s+([.,;:?!])', r'\1', s)
 
-    # Chuẩn hóa khoảng trắng
-    text = re.sub(r"\s+", " ", text).strip()
+    # 8. Đảm bảo sau . ? ! luôn có 1 khoảng trắng (nếu không phải cuối văn bản)
+    s = re.sub(r'([.?!])(\S)', r'\1 \2', s)
 
-    return text
+    # 9. Viết hoa đầu câu
+    def capitalize_sentences(text):
+        text = text.strip()
+        # Tách câu dựa trên dấu . ? !
+        parts = re.split('([.?!]\s*)', text)
+        fixed = []
+        for i, seg in enumerate(parts):
+            if i % 2 == 0:  # đoạn văn
+                if seg:
+                    fixed.append(seg.strip().capitalize())
+            else:  # dấu câu
+                fixed.append(seg)
+        return ''.join(fixed).strip()
 
-# ========================
+    s = capitalize_sentences(s)
+
+    return s
+
+# ============================
 # Giao diện Streamlit
-# ========================
+# ============================
+
 st.title("📝 Text Cleaner")
+st.write("Nhập văn bản cần chuẩn hóa. Phần mềm sẽ loại bỏ ký tự đặc biệt, "
+         "thay '-' và '…' bằng '.', gom nhiều dấu '.' thành 1, viết hoa đầu câu, "
+         "và đảm bảo sau dấu chấm có 1 khoảng trắng.")
 
-input_text = st.text_area("Nhập văn bản gốc:", height=200)
+# Ô nhập văn bản
+input_text = st.text_area("Nhập văn bản gốc tại đây:", height=200)
 
-if st.button("Xử lý văn bản"):
-    if input_text.strip():
-        cleaned = clean_text(input_text)
+# Nút xử lý
+if st.button("🔄 Xử lý văn bản"):
+    cleaned = normalize_text(input_text)
+    if cleaned:
+        st.success("✅ Văn bản đã xử lý")
+        st.text_area("Kết quả:", cleaned, height=200, key="output")
 
-        st.subheader("📌 Kết quả sau xử lý:")
-        st.text_area("Văn bản đã làm sạch:", value=cleaned, height=200, key="output")
-
-        # Nút copy
-        st.code(cleaned, language="text")
-        st.markdown(
-            f"""
-            <button onclick="navigator.clipboard.writeText(`{cleaned}`)" 
-            style="padding:8px 16px; border:none; background:#4CAF50; color:white; border-radius:6px; cursor:pointer;">
-            📋 Copy văn bản
-            </button>
-            """,
-            unsafe_allow_html=True
+        # Nút tải xuống file txt
+        st.download_button(
+            label="📥 Tải kết quả .txt",
+            data=cleaned,
+            file_name="ket_qua.txt",
+            mime="text/plain"
         )
+
+        st.info("👉 Bạn có thể copy trực tiếp từ ô 'Kết quả' hoặc tải file .txt về máy.")
     else:
-        st.warning("⚠️ Vui lòng nhập văn bản trước khi xử lý.")
+        st.warning("⚠️ Không có nội dung để xử lý.")
