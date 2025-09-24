@@ -27,6 +27,16 @@ def fix_ocr_spacing(text: str) -> str:
     return " ".join(merged_tokens)
 
 
+# === Hàm thêm khoảng trắng khi chữ bị dính liền (VD: ởđó -> ở đó) ===
+def fix_missing_spacing(text: str) -> str:
+    vowels = "àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡ" \
+             "ùúụủũưừứựửữỳýỵỷỹđ"
+    # Thêm khoảng trắng khi chữ có dấu + chữ không dấu dính nhau
+    text = re.sub(rf'([{vowels}])([A-Za-z])', r'\1 \2', text)
+    text = re.sub(rf'([A-Za-z])([{vowels}])', r'\1 \2', text)
+    return text
+
+
 # === Hàm sửa lỗi spacing nhỏ khác ===
 def fix_broken_spacing(text: str) -> str:
     text = re.sub(r"\s+", " ", text)  # bỏ khoảng trắng thừa
@@ -54,8 +64,11 @@ def normalize_text(text: str) -> str:
     # Fix spacing
     result = fix_broken_spacing(result)
 
-    # Fix OCR spacing (quan trọng nhất)
+    # Fix OCR spacing (tách rời từng ký tự)
     result = fix_ocr_spacing(result)
+
+    # Fix missing spacing (từ bị dính liền)
+    result = fix_missing_spacing(result)
 
     return result
 
