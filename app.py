@@ -12,7 +12,8 @@ def normalize_text(s, was_bold=False):
         return s
     s = s.replace('“', '').replace('”', '').replace('"', '')
     s = s.replace('-', '.').replace('–', '.').replace('—', '.')
-    s = re.sub(r'\.{2,}', '.', s)
+    s = re.sub(r"\.{2,}", ".", s)
+
     allowed_punct = set(['.', ',', ';', ':', '?', '!', '(', ')'])
     out_chars = []
     for ch in s:
@@ -22,8 +23,16 @@ def normalize_text(s, was_bold=False):
         elif ch in allowed_punct:
             out_chars.append(ch)
     result = ''.join(out_chars)
+
+    # Tách chữ dính: giữa chữ thường và chữ hoa
+    result = re.sub(r'([a-zà-ỹ])([A-ZÀ-Ỹ])', r'\1 \2', result)
+    # Tách chữ và số
+    result = re.sub(r'([a-zA-ZÀ-ỹ])(\d)', r'\1 \2', result)
+    result = re.sub(r'(\d)([a-zA-ZÀ-ỹ])', r'\1 \2', result)
+
     if was_bold:
         result = result.lower()
+
     return result
 
 def process_paragraph(paragraph):
@@ -61,20 +70,54 @@ def process_docx(file_stream):
     out.seek(0)
     return out
 
+def process_text_to_docx(text):
+    doc = Document()
+    p = doc.add_paragraph()
+    run = p.add_run(normalize_text(text))
+    run.font.name = "Times New Roman"
+    rFonts = run._element.rPr.rFonts
+    rFonts.set(qn('w:ascii'), 'Times New Roman')
+    rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+    rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+
+    out = io.BytesIO()
+    doc.save(out)
+    out.seek(0)
+    return out
+
+# ---------------- STREAMLIT UI ---------------- #
+
 st.title("📄 DOCX Cleaner")
-st.write("Upload file `.docx` để chuẩn hóa: \
+st.write("Upload file `.docx` hoặc nhập văn bản trực tiếp để chuẩn hóa: \
 loại bỏ ký tự đặc biệt, thay dấu `-` bằng `.`, gom nhiều dấu `.` thành một, \
-font Times New Roman, bỏ chữ in đậm (đổi thành chữ thường).")
+font Times New Roman, bỏ chữ in đậm (đổi thành chữ thường), và tự động tách chữ dính.")
 
-uploaded_file = st.file_uploader("Chọn file .docx", type=["docx"])
+tab1, tab2 = st.tabs(["📂 Upload DOCX", "✍️ Nhập văn bản"])
 
-if uploaded_file is not None:
-    if st.button("Xử lý file"):
-        result = process_docx(uploaded_file)
-        st.success("✅ Xử lý xong! Nhấn nút dưới để tải xuống.")
-        st.download_button(
-            label="📥 Tải file đã xử lý",
-            data=result,
-            file_name="processed.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
+with tab1:
+    uploaded_file = st.file_uploader("Chọn file .docx", type=["docx"])
+    if uploaded_file is not None:
+        if st.button("Xử lý file DOCX"):
+            result = process_docx(uploaded_file)
+            st.success("✅ Xử lý xong! Nhấn nút dưới để tải xuống.")
+            st.download_button(
+                label="📥 Tải file đã xử lý",
+                data=result,
+                file_name="processed.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+
+with tab2:
+    input_text = st.text_area("Nhập hoặc dán văn bản tại đây:", height=200)
+    if st.button("Xử lý văn bản"):
+        if input_text.strip():
+            result = process_text_to_docx(input_text)
+            st.success("✅ Xử lý xong! Nhấn nút dưới để tải xuống.")
+            st.download_button(
+                label="📥 Tải file đã xử lý",
+                data=result,
+                file_name="processed.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        else:
+            st.warning("⚠️ Vui lòng nhập văn bản trước khi xử lý.")
