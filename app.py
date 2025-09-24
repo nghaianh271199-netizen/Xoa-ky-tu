@@ -42,10 +42,23 @@ if st.button("🔄 Xử lý văn bản"):
     cleaned = normalize_text(input_text)
     if cleaned:
         st.success("✅ Văn bản đã xử lý")
-        st.text_area("Kết quả:", cleaned, height=200, key="output")
 
-        # Nút Copy do Streamlit hỗ trợ từ v1.31
-        st.code(cleaned, language="text")
-        st.caption("👉 Dùng nút copy ở góc trên phải của khung code để copy nhanh.")
+        # Hiển thị kết quả
+        st.text_area("Kết quả:", cleaned, height=200, key="output", label_visibility="collapsed")
+
+        # Nút Copy bằng HTML + JS
+        copy_button = f"""
+        <textarea id="toCopy" style="position:absolute; left:-9999px;">{cleaned}</textarea>
+        <button onclick="copyToClipboard()">📋 Copy văn bản</button>
+        <script>
+        function copyToClipboard() {{
+            var copyText = document.getElementById("toCopy");
+            copyText.select();
+            document.execCommand("copy");
+            alert("✅ Đã copy văn bản vào clipboard!");
+        }}
+        </script>
+        """
+        st.markdown(copy_button, unsafe_allow_html=True)
     else:
         st.warning("⚠️ Không có nội dung để xử lý.")
