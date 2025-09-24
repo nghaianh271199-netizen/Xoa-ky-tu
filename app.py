@@ -13,22 +13,25 @@ def normalize_text(s: str) -> str:
     # 2. Thay mọi loại dash bằng dấu chấm
     s = s.replace('-', '.').replace('–', '.').replace('—', '.')
 
-    # 3. Gom nhiều dấu chấm thành 1
+    # 3. Thay dấu ba chấm … bằng dấu chấm
+    s = s.replace('…', '.')
+
+    # 4. Gom nhiều dấu chấm thành 1
     s = re.sub(r'\.{2,}', '.', s)
 
-    # 4. Loại bỏ ký tự không mong muốn (chỉ giữ chữ, số, dấu câu, khoảng trắng)
+    # 5. Loại bỏ ký tự không mong muốn (chỉ giữ chữ, số, dấu câu, khoảng trắng)
     s = re.sub(r"[^0-9A-Za-zÀ-ỹ.,;:?!()\s]", " ", s)
 
-    # 5. Gom nhiều khoảng trắng thành 1
+    # 6. Gom nhiều khoảng trắng thành 1
     s = re.sub(r'\s+', ' ', s)
 
-    # 6. Xóa khoảng trắng thừa trước dấu câu
+    # 7. Xóa khoảng trắng thừa trước dấu câu
     s = re.sub(r'\s+([.,;:?!])', r'\1', s)
 
-    # 7. Đảm bảo sau . ? ! luôn có 1 khoảng trắng (nếu không phải cuối văn bản)
+    # 8. Đảm bảo sau . ? ! luôn có 1 khoảng trắng (nếu không phải cuối văn bản)
     s = re.sub(r'([.?!])(\S)', r'\1 \2', s)
 
-    # 8. Viết hoa đầu câu
+    # 9. Viết hoa đầu câu
     def capitalize_sentences(text):
         text = text.strip()
         # Tách câu dựa trên dấu . ? !
@@ -52,7 +55,7 @@ def normalize_text(s: str) -> str:
 
 st.title("📝 Text Cleaner")
 st.write("Nhập văn bản cần chuẩn hóa. Phần mềm sẽ loại bỏ ký tự đặc biệt, "
-         "thay '-' bằng '.', gom nhiều dấu '.' thành 1, viết hoa đầu câu, "
+         "thay '-' và '…' bằng '.', gom nhiều dấu '.' thành 1, viết hoa đầu câu, "
          "và đảm bảo sau dấu chấm có 1 khoảng trắng.")
 
 # Ô nhập văn bản
