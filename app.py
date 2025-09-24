@@ -17,7 +17,7 @@ def normalize_text(s: str) -> str:
     # Gom nhiều dấu chấm thành 1
     s = re.sub(r'\.{2,}', '.', s)
 
-    # Giữ lại chữ, số, khoảng trắng và dấu câu cơ bản, ký tự khác thay bằng khoảng trắng
+    # Giữ lại chữ, số, khoảng trắng và dấu câu cơ bản
     allowed_punct = set(['.', ',', ';', ':', '?', '!', '(', ')'])
     out_chars = []
     for ch in s:
@@ -27,21 +27,37 @@ def normalize_text(s: str) -> str:
         elif ch in allowed_punct:
             out_chars.append(ch)
         else:
-            out_chars.append(" ")  # thay ký tự đặc biệt bằng khoảng trắng
+            out_chars.append(" ")  # thay ký tự lạ bằng khoảng trắng
 
     result = ''.join(out_chars)
 
-    # Gom nhiều khoảng trắng về 1
+    # Gom nhiều khoảng trắng thành 1
     result = re.sub(r'\s+', ' ', result)
 
     # Xóa khoảng trắng thừa trước dấu câu
     result = re.sub(r'\s+([.,;:?!])', r'\1', result)
 
+    # Viết hoa sau dấu chấm + đầu văn bản
+    def capitalize_after_dot(text):
+        sentences = re.split('(\. )', text)
+        fixed = []
+        for i, seg in enumerate(sentences):
+            if i == 0 and seg:
+                fixed.append(seg.strip().capitalize())
+            elif seg == '. ':
+                fixed.append(seg)
+            elif seg:
+                fixed.append(seg.strip().capitalize())
+        return ''.join(fixed)
+
+    result = capitalize_after_dot(result)
+
     return result.strip()
 
 st.title("📝 Text Cleaner")
 st.write("Nhập văn bản cần chuẩn hóa, hệ thống sẽ loại bỏ ký tự đặc biệt, "
-         "chuyển dấu `-` thành `.`, gom nhiều dấu `.` thành 1.")
+         "chuyển dấu `-` thành `.`, gom nhiều dấu `.` thành 1, "
+         "và viết hoa sau dấu chấm.")
 
 # Ô nhập văn bản
 input_text = st.text_area("Nhập văn bản gốc tại đây:", height=200)
