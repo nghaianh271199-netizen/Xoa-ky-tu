@@ -43,22 +43,17 @@ if st.button("🔄 Xử lý văn bản"):
     if cleaned:
         st.success("✅ Văn bản đã xử lý")
 
-        # Hiển thị kết quả
-        st.text_area("Kết quả:", cleaned, height=200, key="output", label_visibility="collapsed")
+        # Hiển thị văn bản kết quả để người dùng dễ copy thủ công
+        st.text_area("Kết quả:", cleaned, height=200, key="output")
 
-        # Nút Copy bằng HTML + JS
-        copy_button = f"""
-        <textarea id="toCopy" style="position:absolute; left:-9999px;">{cleaned}</textarea>
-        <button onclick="copyToClipboard()">📋 Copy văn bản</button>
-        <script>
-        function copyToClipboard() {{
-            var copyText = document.getElementById("toCopy");
-            copyText.select();
-            document.execCommand("copy");
-            alert("✅ Đã copy văn bản vào clipboard!");
-        }}
-        </script>
-        """
-        st.markdown(copy_button, unsafe_allow_html=True)
+        # Thêm nút tải xuống file .txt
+        st.download_button(
+            label="📥 Tải kết quả .txt",
+            data=cleaned,
+            file_name="ket_qua.txt",
+            mime="text/plain"
+        )
+
+        st.info("👉 Bạn có thể copy thủ công từ ô 'Kết quả' hoặc tải file .txt về máy.")
     else:
         st.warning("⚠️ Không có nội dung để xử lý.")
