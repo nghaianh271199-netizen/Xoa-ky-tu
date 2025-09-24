@@ -27,7 +27,7 @@ def fix_ocr_spacing(text: str) -> str:
     return " ".join(merged_tokens)
 
 
-# === Hàm sửa lỗi spacing nhỏ khác (dư khoảng trắng, nhiều dấu chấm) ===
+# === Hàm sửa lỗi spacing nhỏ khác ===
 def fix_broken_spacing(text: str) -> str:
     text = re.sub(r"\s+", " ", text)  # bỏ khoảng trắng thừa
     text = re.sub(r"\.{2,}", ".", text)  # từ 2 dấu chấm trở lên -> 1 dấu chấm
@@ -78,18 +78,22 @@ if option == "📂 Tải file DOCX":
 elif option == "⌨️ Nhập văn bản":
     input_text = st.text_area("Nhập văn bản tại đây:", height=300)
 
-if input_text:
-    st.subheader("📌 Văn bản gốc:")
-    st.text_area("Gốc", input_text, height=200)
+# Chỉ xử lý khi bấm nút
+if st.button("⚙️ Xử lý văn bản"):
+    if input_text.strip():
+        st.subheader("📌 Văn bản gốc:")
+        st.text_area("Gốc", input_text, height=200)
 
-    processed_text = normalize_text(input_text)
+        processed_text = normalize_text(input_text)
 
-    st.subheader("✅ Văn bản đã chuẩn hóa:")
-    st.text_area("Kết quả", processed_text, height=300)
+        st.subheader("✅ Văn bản đã chuẩn hóa:")
+        st.text_area("Kết quả", processed_text, height=300)
 
-    # Nút copy văn bản
-    st.code(processed_text, language="markdown")
-    st.button("📋 Copy toàn bộ", on_click=lambda: st.session_state.update({"copied": True}))
+        # Hiển thị khung copy
+        st.code(processed_text, language="markdown")
+        st.button("📋 Copy toàn bộ", on_click=lambda: st.session_state.update({"copied": True}))
 
-    if "copied" in st.session_state and st.session_state["copied"]:
-        st.success("✅ Văn bản đã được copy! (Dùng Ctrl+C trong khung trên nếu chưa tự copy)")
+        if "copied" in st.session_state and st.session_state["copied"]:
+            st.success("✅ Văn bản đã được copy! (Dùng Ctrl+C trong khung trên nếu chưa tự copy)")
+    else:
+        st.warning("⚠️ Vui lòng nhập hoặc tải lên văn bản trước khi xử lý.")
