@@ -1,15 +1,31 @@
-# DOCX Cleaner
+# 📝 Text Cleaner
 
-Ứng dụng Streamlit để xử lý file Word (.docx):
+Ứng dụng trực tuyến để chuẩn hóa văn bản:
 
-- Xóa ký tự đặc biệt, bỏ ngoặc kép “ ”
-- Thay dấu gạch ngang (-, –, —) bằng dấu chấm `.`
-- Gom nhiều dấu chấm thành một `.`
-- Bỏ in đậm, chuyển chữ in đậm thành chữ thường
-- Chuyển font toàn bộ sang Times New Roman
+- Xóa dấu ngoặc kép “ ” và các ký tự đặc biệt.
+- Thay dấu `-` thành dấu `.`.
+- Gom từ 2 dấu `.` trở lên thành một dấu `.`.
+- Giữ nguyên chữ, số, khoảng trắng, dấu câu cơ bản.
+- Ký tự đặc biệt sẽ được thay bằng khoảng trắng để tránh dính chữ.
+- Cho phép tải xuống văn bản kết quả dưới dạng `.txt`.
 
-## Cách chạy trên Streamlit Cloud
-1. Fork repo này hoặc push code lên repo GitHub của bạn.
-2. Vào [Streamlit Cloud](https://share.streamlit.io) → New app.
-3. Chọn repo, branch (main), file `app.py`.
-4. Deploy → nhận link trực tuyến để dùng app.
+---
+
+## 🚀 Cách sử dụng
+
+### 1. Trực tuyến (khuyên dùng)
+- Deploy ứng dụng trên **[Streamlit Cloud](https://share.streamlit.io/)**.
+- Chỉ cần vào link → dán văn bản → bấm **Xử lý văn bản** → copy hoặc tải `.txt`.
+
+### 2. Chạy trên máy tính
+```bash
+# Tạo môi trường ảo (tùy chọn)
+python -m venv venv
+source venv/bin/activate   # Mac/Linux
+venv\Scripts\activate      # Windows
+
+# Cài thư viện
+pip install -r requirements.txt
+
+# Chạy app
+streamlit run app.py
